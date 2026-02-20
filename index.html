@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TokTik</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(255,255,255,0.07);
+    --accent: #ff2d6b;
+    --accent2: #00e5ff;
+    --accent3: #b24bff;
+    --text: #f0f0f8;
+    --muted: #6b6b80;
+    --sidebar-w: 240px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -1px;
+    margin-bottom: 36px;
+    padding-left: 8px;
+  }
+  .logo span:first-child { color: var(--accent); }
+  .logo span:last-child  { color: var(--accent2); }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.2s;
+    margin-bottom: 4px;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--surface2); color: var(--accent); }
+  .nav-icon { font-size: 20px; width: 24px; text-align: center; }
+  .sidebar-spacer { flex: 1; }
+
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--surface2);
+    margin-bottom: 12px;
+  }
+  .sidebar-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .sidebar-username { font-size: 13px; font-weight: 600; }
+  .sidebar-handle { font-size: 11px; color: var(--muted); }
+  .logout-btn {
+    background: transparent; border: none; color: var(--muted);
+    font-size: 11px; cursor: pointer; padding: 0;
+    text-decoration: underline; transition: color 0.2s;
+  }
+  .logout-btn:hover { color: var(--accent); }
+
+  .upload-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 12px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: white; font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 14px; cursor: pointer; border: none; width: 100%;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .upload-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .sign-in-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 12px; border-radius: 12px;
+    background: transparent; border: 1.5px solid var(--accent);
+    color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 14px; cursor: pointer; width: 100%; transition: background 0.2s;
+  }
+  .sign-in-btn:hover { background: rgba(255,45,107,0.1); }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1; height: 100vh; overflow: hidden;
+    position: relative; display: flex; flex-direction: column;
+  }
+  .top-bar {
+    display: flex; align-items: center;
+    padding: 16px 24px; gap: 16px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .tab-btn {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+    padding: 6px 14px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted); cursor: pointer; transition: color 0.2s;
+  }
+  .tab-btn.active { color: var(--text); background: var(--surface2); }
+
+  .search-wrap { margin-left: auto; position: relative; }
+  .search-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 16px 8px 36px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; width: 200px; outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent2); }
+  .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 14px;
+  }
+
+  /* ── FEED ── */
+  .feed-container {
+    flex: 1; overflow-y: scroll; scroll-snap-type: y mandatory;
+    scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+  }
+  .feed-container::-webkit-scrollbar { display: none; }
+
+  .empty-feed {
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    position: relative; overflow: hidden;
+  }
+  .empty-glow {
+    position: absolute; width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,45,107,0.08) 0%, rgba(178,75,255,0.05) 50%, transparent 70%);
+    pointer-events: none; animation: pulse 4s ease-in-out infinite;
+  }
+  .empty-icon {
+    font-size: 72px; position: relative; z-index: 1;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 30px rgba(255,45,107,0.4));
+  }
+  .empty-title {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px;
+    position: relative; z-index: 1;
+  }
+  .empty-sub {
+    font-size: 15px; color: var(--muted); text-align: center;
+    line-height: 1.6; position: relative; z-index: 1;
+  }
+  .empty-action-btn {
+    margin-top: 8px; padding: 14px 32px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none; color: white; font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 16px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .empty-action-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(1.15);opacity:1} }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    width: 320px; height: 100vh;
+    background: var(--surface); border-left: 1px solid var(--border);
+    flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .comments-section {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .comments-header {
+    padding: 20px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .panel-title {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  }
+
+  .comment-list {
+    flex: 1; overflow-y: auto; padding: 16px 20px;
+  }
+  .comment-list::-webkit-scrollbar { width: 3px; }
+  .comment-list::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  .no-comments {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; gap: 10px;
+    color: var(--muted); text-align: center; padding: 20px;
+  }
+  .no-comments-icon { font-size: 36px; opacity: 0.45; }
+  .no-comments-text { font-size: 14px; line-height: 1.6; }
+
+  .comment {
+    display: flex; gap: 10px; margin-bottom: 16px;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .comment-avatar-wrap {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .comment-body { flex: 1; }
+  .comment-user { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .comment-text { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.4; word-break: break-word; }
+  .comment-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .comment-input-wrap {
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .comment-input-row { display: flex; gap: 8px; align-items: center; }
+  .comment-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 9px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .comment-input:focus { border-color: var(--accent2); }
+  .comment-send {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none; color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: opacity 0.2s; flex-shrink: 0;
+  }
+  .comment-send:hover { opacity: 0.85; }
+
+  /* Locked comment prompt */
+  .comment-locked {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .comment-locked:hover { border-color: var(--accent); }
+  .comment-locked-text { font-size: 13px; color: var(--muted); flex: 1; }
+  .comment-locked-cta { font-size: 13px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+    z-index: 100; display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 36px; width: 420px; max-width: 95vw;
+    position: relative;
+    animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.92) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+  .modal-close {
+    position: absolute; top: 16px; right: 18px;
+    background: transparent; border: none; color: var(--muted);
+    font-size: 20px; cursor: pointer; line-height: 1; transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .modal-logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px;
+    text-align: center; margin-bottom: 4px;
+  }
+  .modal-logo span:first-child { color: var(--accent); }
+  .modal-logo span:last-child  { color: var(--accent2); }
+  .modal-subtitle { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 26px; }
+
+  .auth-tabs {
+    display: flex; background: var(--surface2); border-radius: 10px;
+    padding: 4px; gap: 4px; margin-bottom: 22px;
+  }
+  .auth-tab {
+    flex: 1; padding: 8px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .auth-tab.active { background: var(--surface); color: var(--text); }
+
+  .field-wrap { margin-bottom: 14px; }
+  .field-label {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase;
+    display: block;
+  }
+  .auth-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .auth-input:focus { border-color: var(--accent2); }
+
+  .auth-error {
+    background: rgba(255,45,107,0.1); border: 1px solid rgba(255,45,107,0.3);
+    border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--accent);
+    margin-bottom: 14px; display: none;
+  }
+  .auth-error.show { display: block; }
+
+  .auth-submit {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none; border-radius: 12px; color: white;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+    cursor: pointer; transition: opacity 0.2s; margin-top: 4px;
+  }
+  .auth-submit:hover { opacity: 0.88; }
+
+  /* Upload modal specifics */
+  .upload-modal-title {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; margin-bottom: 20px;
+  }
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 16px;
+    padding: 36px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 18px;
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(255,45,107,0.05); }
+  .upload-icon-big { font-size: 36px; margin-bottom: 10px; }
+  .upload-hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .upload-hint strong { color: var(--accent); }
+
+  .modal-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+    margin-bottom: 10px; transition: border-color 0.2s;
+  }
+  .modal-input:focus { border-color: var(--accent2); }
+  .modal-footer { display: flex; gap: 10px; margin-top: 10px; }
+  .btn-cancel {
+    flex: 1; padding: 12px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-cancel:hover { background: rgba(255,255,255,0.06); }
+  .btn-post {
+    flex: 1; padding: 12px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none; color: white; font-family: 'Syne', sans-serif;
+    font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-post:hover { opacity: 0.88; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,15,0.9); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 22px; border-radius: 20px;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px;
+    z-index: 300; backdrop-filter: blur(12px); pointer-events: none;
+    white-space: nowrap;
+    animation: toastIn 0.3s ease forwards;
+  }
+  @keyframes toastIn {
+    from { opacity:0; transform:translateX(-50%) translateY(10px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) { .right-panel { display: none; } }
+  @media (max-width: 700px) {
+    .sidebar { width: 64px; }
+    .logo span, .nav-text, .sidebar-username, .sidebar-handle, .logout-btn { display: none; }
+    .nav-item { justify-content: center; }
+    .upload-btn, .sign-in-btn { padding: 12px; justify-content: center; }
+    .upload-btn span:last-child, .sign-in-btn span:last-child { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar">
+  <div class="logo"><span>Tok</span><span>Tik</span></div>
+
+  <nav>
+    <button class="nav-item active" onclick="setTab(this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-text">For You</span>
+    </button>
+    <button class="nav-item" onclick="setTab(this)">
+      <span class="nav-icon">🔍</span>
+      <span class="nav-text">Explore</span>
+    </button>
+    <button class="nav-item" onclick="handleProfileNav()">
+      <span class="nav-icon">👤</span>
+      <span class="nav-text">Profile</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-spacer"></div>
+
+  <!-- Logged IN state -->
+  <div id="sidebarLoggedIn" style="display:none">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="sidebarEmoji">😀</div>
+      <div>
+        <div class="sidebar-username" id="sidebarName">User</div>
+        <div class="sidebar-handle" id="sidebarHandle">@handle</div>
+        <button class="logout-btn" onclick="logout()">Log out</button>
+      </div>
+    </div>
+    <button class="upload-btn" onclick="openUpload()">
+      <span>＋</span><span>Upload</span>
+    </button>
+  </div>
+
+  <!-- Logged OUT state -->
+  <div id="sidebarLoggedOut">
+    <button class="sign-in-btn" onclick="openAuth()">
+      <span>👤</span><span>Sign In</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN FEED ═══════════ -->
+<main class="main">
+  <div class="top-bar">
+    <button class="tab-btn active" onclick="switchFeedTab(this)">For You</button>
+    <button class="tab-btn" onclick="switchFeedTab(this)">Following</button>
+    <button class="tab-btn" onclick="switchFeedTab(this)">Trending</button>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" placeholder="Search TokTik…">
+    </div>
+  </div>
+
+  <div class="feed-container" id="feedContainer">
+    <div class="empty-feed">
+      <div class="empty-glow"></div>
+      <div class="empty-icon">🎬</div>
+      <h2 class="empty-title">No videos yet</h2>
+      <p class="empty-sub" id="emptySubText">Sign in and be the first to post.</p>
+      <button class="empty-action-btn" onclick="handleEmptyAction()">
+        <span id="emptyBtnLabel">＋ Get Started</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════ RIGHT PANEL ═══════════ -->
+<aside class="right-panel">
+  <div class="comments-section">
+    <div class="comments-header">
+      <div class="panel-title">Comments</div>
+    </div>
+
+    <div class="comment-list" id="commentList">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="comment-input-wrap">
+      <!-- Logged IN -->
+      <div class="comment-input-row" id="commentInputRow" style="display:none">
+        <input class="comment-input" id="commentInput" type="text"
+          placeholder="Add a comment…" maxlength="280"
+          onkeydown="if(event.key==='Enter')postComment()">
+        <button class="comment-send" onclick="postComment()">➤</button>
+      </div>
+      <!-- Logged OUT -->
+      <div class="comment-locked" id="commentLocked" onclick="openAuth()">
+        <span>🔒</span>
+        <span class="comment-locked-text">Want to comment?</span>
+        <span class="comment-locked-cta">Sign in →</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════ AUTH MODAL ═══════════ -->
+<div class="modal-overlay" id="authModal" onclick="overlayClose(event,'authModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('authModal')">✕</button>
+    <div class="modal-logo"><span>Tok</span><span>Tik</span></div>
+    <div class="modal-subtitle">Join the community</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin"  onclick="switchAuthTab('login')">Log In</button>
+      <button class="auth-tab"        id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+
+    <div class="auth-error" id="authError"></div>
+
+    <!-- Log in -->
+    <div id="loginForm">
+      <div class="field-wrap">
+        <label class="field-label">Username</label>
+        <input class="auth-input" id="loginUsername" type="text" placeholder="your_username" autocomplete="username">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Password</label>
+        <input class="auth-input" id="loginPassword" type="password" placeholder="••••••••"
+          autocomplete="current-password" onkeydown="if(event.key==='Enter')submitLogin()">
+      </div>
+      <button class="auth-submit" onclick="submitLogin()">Log In</button>
+    </div>
+
+    <!-- Sign up -->
+    <div id="signupForm" style="display:none">
+      <div class="field-wrap">
+        <label class="field-label">Display Name</label>
+        <input class="auth-input" id="signupName" type="text" placeholder="Your Name" autocomplete="name">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Username</label>
+        <input class="auth-input" id="signupUsername" type="text" placeholder="your_username" autocomplete="username">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Password</label>
+        <input class="auth-input" id="signupPassword" type="password" placeholder="Min. 6 characters" autocomplete="new-password">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Confirm Password</label>
+        <input class="auth-input" id="signupConfirm" type="password" placeholder="Repeat password"
+          autocomplete="new-password" onkeydown="if(event.key==='Enter')submitSignup()">
+      </div>
+      <button class="auth-submit" onclick="submitSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ UPLOAD MODAL ═══════════ -->
+<div class="modal-overlay" id="uploadModal" onclick="overlayClose(event,'uploadModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('uploadModal')">✕</button>
+    <div class="upload-modal-title">Upload to TokTik 🎬</div>
+    <div class="upload-zone" onclick="toast('📁 File picker coming soon!')">
+      <div class="upload-icon-big">📤</div>
+      <div>Drop your video here or <strong>browse files</strong></div>
+      <div class="upload-hint">MP4, MOV, AVI · up to 500MB</div>
+    </div>
+    <input class="modal-input" type="text" placeholder="Write a caption… #hashtags welcome">
+    <input class="modal-input" type="text" placeholder="Add music or sound">
+    <div style="display:flex;gap:16px;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer">
+        <input type="checkbox" checked style="accent-color:var(--accent)"> Allow comments
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer">
+        <input type="checkbox" style="accent-color:var(--accent)"> Private
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn-post" onclick="toast('🎉 Video posted!');closeModal('uploadModal')">Post Video</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Tiny in-session store (sessionStorage so it survives refresh but not new tabs) ───
+const STORE_KEY = 'toktik_v1';
+
+function getStore() {
+  try { return JSON.parse(sessionStorage.getItem(STORE_KEY)) || { users:[], comments:[], session:null }; }
+  catch { return { users:[], comments:[], session:null }; }
+}
+function putStore(s) { sessionStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+
+function me()        { return getStore().session; }
+function isLoggedIn(){ return !!me(); }
+
+// ─── UI refresh ────────────────────────────────────────────────────────────────
+function refreshUI() {
+  const user = me();
+  const loggedIn  = document.getElementById('sidebarLoggedIn');
+  const loggedOut = document.getElementById('sidebarLoggedOut');
+  const inputRow  = document.getElementById('commentInputRow');
+  const locked    = document.getElementById('commentLocked');
+  const subText   = document.getElementById('emptySubText');
+  const btnLabel  = document.getElementById('emptyBtnLabel');
+
+  if (user) {
+    loggedIn.style.display  = 'block';
+    loggedOut.style.display = 'none';
+    document.getElementById('sidebarEmoji').textContent  = user.emoji;
+    document.getElementById('sidebarName').textContent   = user.name;
+    document.getElementById('sidebarHandle').textContent = '@' + user.username;
+
+    inputRow.style.display = 'flex';
+    locked.style.display   = 'none';
+
+    subText.textContent = 'Be the first to post on TokTik.';
+    btnLabel.textContent = '＋ Upload a Video';
+  } else {
+    loggedIn.style.display  = 'none';
+    loggedOut.style.display = 'block';
+
+    inputRow.style.display = 'none';
+    locked.style.display   = 'flex';
+
+    subText.textContent = 'Sign in and be the first to post on TokTik.';
+    btnLabel.textContent = '＋ Get Started';
+  }
+
+  renderComments();
+}
+
+// ─── Sign up ───────────────────────────────────────────────────────────────────
+function submitSignup() {
+  const name   = v('signupName').trim();
+  const uname  = v('signupUsername').trim().toLowerCase().replace(/\s+/g,'');
+  const pw     = v('signupPassword');
+  const pwc    = v('signupConfirm');
+
+  if (!name)                           return authErr('Please enter your display name.');
+  if (uname.length < 3)               return authErr('Username must be at least 3 characters.');
+  if (!/^[a-z0-9_.]+$/.test(uname))   return authErr('Username: letters, numbers, _ and . only.');
+  if (pw.length < 6)                   return authErr('Password must be at least 6 characters.');
+  if (pw !== pwc)                      return authErr("Passwords don't match.");
+
+  const s = getStore();
+  if (s.users.find(u => u.username === uname)) return authErr('That username is already taken.');
+
+  const emojis = ['🦊','🐺','🌸','🎮','🍳','🌌','🎨','🏄','🤖','🦁','🐸','🦋','🐙','🦄','🎯','🔥','⚡'];
+  const emoji  = emojis[Math.floor(Math.random() * emojis.length)];
+
+  s.users.push({ name, username: uname, pw, emoji });
+  s.session = { name, username: uname, emoji };
+  putStore(s);
+
+  closeModal('authModal');
+  refreshUI();
+  toast(`👋 Welcome to TokTik, ${name}!`);
+}
+
+// ─── Log in ────────────────────────────────────────────────────────────────────
+function submitLogin() {
+  const uname = v('loginUsername').trim().toLowerCase();
+  const pw    = v('loginPassword');
+
+  if (!uname) return authErr('Please enter your username.');
+  if (!pw)    return authErr('Please enter your password.');
+
+  const s    = getStore();
+  const user = s.users.find(u => u.username === uname && u.pw === pw);
+  if (!user)  return authErr('Incorrect username or password.');
+
+  s.session = { name: user.name, username: user.username, emoji: user.emoji };
+  putStore(s);
+
+  closeModal('authModal');
+  refreshUI();
+  toast(`👋 Welcome back, ${user.name}!`);
+}
+
+// ─── Log out ───────────────────────────────────────────────────────────────────
+function logout() {
+  const s = getStore(); s.session = null; putStore(s);
+  refreshUI();
+  toast('See you soon! 👋');
+}
+
+// ─── Comments ──────────────────────────────────────────────────────────────────
+function renderComments() {
+  const { comments } = getStore();
+  const list = document.getElementById('commentList');
+
+  if (!comments || comments.length === 0) {
+    list.innerHTML = `
+      <div class="no-comments">
+        <div class="no-comments-icon">💬</div>
+        <div class="no-comments-text">No comments yet.<br>Be the first to say something!</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = comments.slice().reverse().map(c => `
+    <div class="comment">
+      <div class="comment-avatar-wrap">${c.emoji}</div>
+      <div class="comment-body">
+        <div class="comment-user">@${esc(c.username)}</div>
+        <div class="comment-text">${esc(c.text)}</div>
+        <div class="comment-time">${esc(c.time)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function postComment() {
+  if (!isLoggedIn()) { openAuth(); return; }
+  const input = document.getElementById('commentInput');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  const user = me();
+  const s    = getStore();
+  s.comments.push({ username: user.username, emoji: user.emoji, text, time: timeAgo() });
+  putStore(s);
+  input.value = '';
+  renderComments();
+  document.getElementById('commentList').scrollTop = 0;
+}
+
+function timeAgo() {
+  return 'just now';
+}
+
+// ─── Auth modal helpers ────────────────────────────────────────────────────────
+function openAuth(tab) {
+  switchAuthTab(tab || 'login');
+  clearAuth();
+  document.getElementById('authModal').classList.add('open');
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display   = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('signupForm').style.display  = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('tabLogin').classList.toggle('active',  tab === 'login');
+  document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
+  hideAuthErr();
+}
+
+function authErr(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideAuthErr() { document.getElementById('authError').classList.remove('show'); }
+
+function clearAuth() {
+  ['loginUsername','loginPassword','signupName','signupUsername','signupPassword','signupConfirm']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  hideAuthErr();
+}
+
+// ─── Upload modal ──────────────────────────────────────────────────────────────
+function openUpload() {
+  if (!isLoggedIn()) { openAuth(); return; }
+  document.getElementById('uploadModal').classList.add('open');
+}
+
+// ─── Empty state CTA ──────────────────────────────────────────────────────────
+function handleEmptyAction() {
+  if (isLoggedIn()) openUpload();
+  else openAuth('signup');
+}
+
+// ─── Profile nav ──────────────────────────────────────────────────────────────
+function handleProfileNav() {
+  if (!isLoggedIn()) openAuth();
+  else toast('👤 Profile page coming soon!');
+}
+
+// ─── Generic modal helpers ────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function overlayClose(e, id) { if(e.target===document.getElementById(id)) closeModal(id); }
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ─── Nav ──────────────────────────────────────────────────────────────────────
+function setTab(el) {
+  document.querySelectorAll('.sidebar .nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+function switchFeedTab(el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── Keyboard nav ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const feed = document.getElementById('feedContainer');
+  const h = feed.clientHeight;
+  if      (e.key === 'ArrowDown' || e.key === 'j') feed.scrollBy({top:  h, behavior:'smooth'});
+  else if (e.key === 'ArrowUp'   || e.key === 'k') feed.scrollBy({top: -h, behavior:'smooth'});
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function v(id) { return document.getElementById(id).value || ''; }
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+refreshUI();
+</script>
+</body>
+</html>
